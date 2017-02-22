@@ -6,6 +6,8 @@ file(GLOB test_sources *.test.cpp)
 add_executable(peval_tests ${test_sources})
 target_link_libraries(peval_tests peval gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
 
+set(CMAKE_CXX_FLAGS "-std=gnu++11")
+
 # build the library sources from all sources, removing the test sources
 file(GLOB lib_sources *.cpp)
 foreach(source_file ${test_sources})

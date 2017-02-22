@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 find_package (Threads)
 
-set (CMAKE_CXX_FLAGS "-O2")
+set (CMAKE_CXX_FLAGS "-O2 -std=gnu++11")
 
 # build the test
 file(GLOB test_sources *.test.cpp)

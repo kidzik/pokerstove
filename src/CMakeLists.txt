@@ -27,6 +27,8 @@ message(status "** Boost Include: ${Boost_INCLUDE_DIR}")
 message(status "** Boost Libraries: ${Boost_LIBRARY_DIRS}")
 message(status "** Boost Libraries: ${Boost_LIBRARIES}")
 
+set(CMAKE_CXX_FLAGS "-std=gnu++11")
+
 # Set up gtest. This must be set up before any subdirectories are
 # added which will use gtest.
 add_subdirectory(ext/googletest)
@@ -54,3 +56,5 @@ add_subdirectory(lib/pokerstove/util)
 add_subdirectory(programs/ps-colex)
 add_subdirectory(programs/ps-eval)
 add_subdirectory(programs/ps-lut)
+
+set(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
