@@ -56,5 +56,6 @@ add_subdirectory(lib/pokerstove/util)
 add_subdirectory(programs/ps-colex)
 add_subdirectory(programs/ps-eval)
 add_subdirectory(programs/ps-lut)
+add_subdirectory(programs/ps-omaha)
 
 set(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
