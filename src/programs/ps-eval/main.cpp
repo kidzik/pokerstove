@@ -14,6 +14,7 @@ int main(int argc, char** argv) {
       ("game,g", po::value<string>()->default_value("h"), "game to use for evaluation")
       ("board,b", po::value<string>(), "community cards for he/o/o8")
       ("hand,h", po::value<vector<string>>(), "a hand for evaluation")
+      ("samples,s", po::value<int>(), "num of monte carlo samples")
       ("quiet,q", "produces no output");
 
   // make hand a positional argument
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
   // fill with random if necessary
   if (handDists.size() == 1) {
     handDists.emplace_back();
-    handDists.back().fill(evaluator->handSize());
+    handDists.back().fill_random(evaluator->handSize(), vm["samples"].as<int>());
   }
 
   // calcuate the results and print them

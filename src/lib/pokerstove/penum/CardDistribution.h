@@ -57,8 +57,11 @@ public:
      */
     std::string str() const;
 
-    void fill (int n);  //!< fill with all n card permutations of deck
-    void fill (const CardSet& cs, int n); //!< fill with all n card permutations of CardSet
+    void fill (int n);  //!< fill with all n-card permutations of deck
+    void fill (const CardSet& cs, int n); //!< fill with all n-card permutations of CardSet
+
+    void fill_random (int n, int sample);  //!< fill with sample n-card permutations of deck
+    void fill_random (const CardSet& cs, int n, int sample); //!< fill with sample n-card permutations of CardSet
 
     /**
      * return the total number of hands in the distribution

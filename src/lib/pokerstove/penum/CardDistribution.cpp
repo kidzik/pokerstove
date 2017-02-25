@@ -98,6 +98,32 @@ void CardDistribution::fill (const CardSet& cs, int n)
     while (hands.next());
 }
 
+void CardDistribution::fill_random(int n, int samples)
+{
+    CardSet cards;
+    cards.fill();
+    fill_random(cards, n, samples);
+}
+
+void CardDistribution::fill_random (const CardSet& cs, int n, int samples)
+{
+    vector<Card> cards = cs.cards ();
+    int setsize = static_cast<int>(cards.size());
+    combinations hands(setsize, n);
+    clear();
+    _handList.reserve (samples);
+
+    for (int j=0; j<samples; j++)
+    {
+      std::random_shuffle(cards.begin(), cards.end()); 
+      CardSet cs;
+      for (int i=0; i<n; i++)
+	cs.insert(cards[i]);
+      _handList.push_back(cs);
+      _weights[cs] = 1.0;
+    }
+}
+
 const CardSet& CardDistribution::operator[](size_t index) const
 {
     if (index >= _handList.size())
