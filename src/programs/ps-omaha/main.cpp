@@ -11,11 +11,22 @@ using namespace pokerstove;
 namespace po = boost::program_options;
 using namespace std;
 
+template <typename T1, typename T2>
+struct more_first {
+    typedef pair<T1, T2> type;
+    bool operator ()(type const& a, type const& b) const {
+        return a.first > b.first;
+    }
+};
+
 double calculate_equity(std::vector<Card> cards,
 			string board,
 			vector<string> hands,
-			boost::shared_ptr<PokerHandEvaluator> evaluator)
+			boost::shared_ptr<PokerHandEvaluator> evaluator,
+			int samples)
 {
+  double total = 0.0;
+  for (int s = 0; s < samples; s++){
   ShowdownEnumerator showdown;
   std::random_shuffle(cards.begin(), cards.end());
 
@@ -46,7 +57,9 @@ double calculate_equity(std::vector<Card> cards,
   vector<EquityResult> results =
     showdown.calculateEquity(handDists, newBoard, evaluator);
 
-  return results[0].winShares + results[0].tieShares;
+  total += results[0].winShares + results[0].tieShares;
+  }
+  return total / samples;
 }
 
 int main(int argc, char** argv) {
@@ -105,34 +118,48 @@ int main(int argc, char** argv) {
     PokerHandEvaluator::alloc(game);
 
   // equity vs random hand
-  double total = 0.0;
-  for (int s = 0; s < samples; s++)
-    total += calculate_equity(cards, board, hands, evaluator);
+  double total = calculate_equity(cards, board, hands, evaluator, samples);
 
   // equity vs pre-flop top 20%
   std::map<CardSet, double> random_hands;
+
+  // get pre-flop hands
   for (int s = 0; s < samples; s++){
     CardSet fullSetTmp = CardSet();
+    fullSetTmp.fill();
+    fullSetTmp ^= handSet;
+    std::vector<Card> cards = fullSetTmp.cards();
     std::random_shuffle(cards.begin(), cards.end());
     CardSet opponent = CardSet();
 
-    for (int i = 0; i < 5; i++){
-      opponent.insert(cards[i]);
+    for (int i = 0; i < 4; i++){
+       opponent.insert(cards[i]);
     }
     CardSet opponentSet = CardSet(opponent);
     fullSetTmp ^= opponentSet;
-    std::vector<Card> cards = fullSetTmp.cards();
+    cards = fullSetTmp.cards();
 
     vector<string> opponent_hand;
     opponent_hand.push_back(opponent.str());
-    cout << opponent.str() << endl;
-    double eq = calculate_equity(cards, board, opponent_hand, evaluator);
-    cout << eq << endl;
+    double eq = calculate_equity(cards, "", opponent_hand, evaluator, 100);
     random_hands[opponent] = eq;
-    cout << "DONE" << endl;
   }
-  calculate_equity(cards, board, hands, evaluator);
+  
+  // sort hands
+  std::vector<std::pair<double, CardSet> > eq_random_hands;
+  for (std::map<CardSet, double>::iterator it = random_hands.begin(); it != random_hands.end(); it++){
+    std::pair<double, CardSet> p(it->second, it->first);
+    eq_random_hands.push_back(p);
+  }
+  sort(eq_random_hands.begin(), eq_random_hands.end(), more_first<double, CardSet>());
+
+  // equity vs top 10%
+  for (int s = 0; s < samples / 10; s++){
+    std::map<CardSet, double> random_hands;
+    // TODO
+  }
 
 
-  cout << (total / double(samples)) << endl;
+  
+  //cout << eq_random_hands.begin() << endl;
 }
