@@ -19,13 +19,13 @@ struct more_first {
     }
 };
 
-double calculate_equity(std::vector<Card> cards,
+pair<double, double> calculate_equity(std::vector<Card> cards,
 			string board,
 			vector<string> hands,
 			boost::shared_ptr<PokerHandEvaluator> evaluator,
 			int samples)
 {
-  double total = 0.0;
+  pair<double, double> total(0.0,0.0);
   for (int s = 0; s < samples; s++){
   ShowdownEnumerator showdown;
   std::random_shuffle(cards.begin(), cards.end());
@@ -51,15 +51,21 @@ double calculate_equity(std::vector<Card> cards,
   handDists.emplace_back();
   handDists.back().parse(hands[0]);
   handDists.emplace_back();
-  handDists.back().parse(opponent.str());
+  if (hands.size() > 1)
+    handDists.back().parse(hands[1]);
+  else
+    handDists.back().parse(opponent.str());
 
   // calcuate the results and store them
   vector<EquityResult> results =
     showdown.calculateEquity(handDists, newBoard, evaluator);
 
-  total += results[0].winShares + results[0].tieShares;
+  total.first += results[0].winShares + results[0].tieShares;
+  total.second += results[1].winShares + results[1].tieShares;
   }
-  return total / samples;
+  total.first /= samples;
+  total.second /= samples;
+  return total;
 }
 
 int main(int argc, char** argv) {
@@ -118,7 +124,7 @@ int main(int argc, char** argv) {
     PokerHandEvaluator::alloc(game);
 
   // equity vs random hand
-  double total = calculate_equity(cards, board, hands, evaluator, samples);
+  // pair<double, double> total = calculate_equity(cards, board, hands, evaluator, samples);
 
   // equity vs pre-flop top 20%
   std::map<CardSet, double> random_hands;
@@ -141,8 +147,8 @@ int main(int argc, char** argv) {
 
     vector<string> opponent_hand;
     opponent_hand.push_back(opponent.str());
-    double eq = calculate_equity(cards, "", opponent_hand, evaluator, 100);
-    random_hands[opponent] = eq;
+    pair<double, double> eq = calculate_equity(cards, "", opponent_hand, evaluator, 100);
+    random_hands[opponent] = eq.first;
   }
   
   // sort hands
@@ -154,12 +160,17 @@ int main(int argc, char** argv) {
   sort(eq_random_hands.begin(), eq_random_hands.end(), more_first<double, CardSet>());
 
   // equity vs top 10%
-  for (int s = 0; s < samples / 10; s++){
-    std::map<CardSet, double> random_hands;
-    // TODO
+
+  int nruns = samples / 10;
+  double eq_vs_top_flop = 0.0;
+  for (int s = 0; s < nruns; s++){
+    vector<string> vhands;
+    vhands.push_back(hands[0]);
+    vhands.push_back(eq_random_hands[s].second.str());
+    cout << eq_random_hands[s].second.str() << endl;
+    pair<double, double> eq = calculate_equity(cards, board, vhands, evaluator, 100);
+    eq_vs_top_flop += eq.first;
   }
-
-
-  
-  //cout << eq_random_hands.begin() << endl;
+  eq_vs_top_flop /= nruns;
+  cout << eq_vs_top_flop << endl;
 }
