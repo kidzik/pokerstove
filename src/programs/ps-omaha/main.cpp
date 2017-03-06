@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
       ("game,g", po::value<string>()->default_value("o"), "game to use for evaluation")
       ("board,b", po::value<string>(), "community cards for he/o/o8")
       ("hand,h", po::value<vector<string>>(), "a hand for evaluation")
-      ("top,top", po::value<int>(), "% of top hands")
+      ("top,top", po::value<int>()->default_value(100), "% of top hands")
       ("samples,s", po::value<int>()->default_value(10000), "num of monte carlo samples");
   // TODO: Only Omaha works!
   // TODO: Only one hand!
@@ -102,6 +102,7 @@ int main(int argc, char** argv) {
 
   // extract the options
   string game = vm["game"].as<string>();
+  int top = vm["top"].as<int>();
   string board = vm.count("board") ? vm["board"].as<string>() : "";
   vector<string> hands = vm["hand"].as<vector<string>>();
 
@@ -124,7 +125,10 @@ int main(int argc, char** argv) {
     PokerHandEvaluator::alloc(game);
 
   // equity vs random hand
-  // pair<double, double> total = calculate_equity(cards, board, hands, evaluator, samples);
+  if (top == 100){
+    pair<double, double> total = calculate_equity(cards, board, hands, evaluator, samples);
+    cout << total.first << endl;
+  }
 
   // equity vs pre-flop top 20%
   std::map<CardSet, double> random_hands;
