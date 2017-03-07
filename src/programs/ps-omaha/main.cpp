@@ -70,9 +70,12 @@ pair<double, double> calculate_equity(std::vector<Card> cards,
     vector<EquityResult> results =
       showdown.calculateEquity(handDists, newBoard, evaluator);
 
-    total.first += results[0].winShares + results[0].tieShares;
-    total.second += results[1].winShares + results[1].tieShares;
-  }
+    double a = results[0].winShares;// + results[0].tieShares;
+    double b = results[1].winShares;// + results[1].tieShares;
+    
+    total.first += a;
+    total.second += b;
+   }
   // mean
   total.first /= samples;
   total.second /= samples;
@@ -83,7 +86,7 @@ int main(int argc, char** argv) {
   po::options_description desc("ps-eval, a poker hand evaluator\n");
 
   desc.add_options()("help,?", "produce help message")
-      ("game,g", po::value<string>()->default_value("o"), "game to use for evaluation")
+      ("game,g", po::value<string>()->default_value("O"), "game to use for evaluation")
       ("board,b", po::value<string>(), "community cards for he/o/o8")
       ("hand,h", po::value<vector<string>>(), "a hand for evaluation")
       ("top,top", po::value<int>()->default_value(100), "% of top hands")
@@ -135,11 +138,11 @@ int main(int argc, char** argv) {
     PokerHandEvaluator::alloc(game);
 
   // equity vs random hand
-  if (top == 100){
-    pair<double, double> total = calculate_equity(cards, board, hands, evaluator, samples);
-    cout << total.first << endl;
-    return 0;
-  }
+  // if (top == 100){
+  //   pair<double, double> total = calculate_equity(cards, board, hands, evaluator, samples);
+  //   cout << total.first << endl;
+  //   return 0;
+  // }
 
   // equity vs pre-flop top 20%
   std::map<CardSet, double> random_hands;
@@ -184,8 +187,12 @@ int main(int argc, char** argv) {
     vector<string> vhands;
     vhands.push_back(hands[0]);
     vhands.push_back(eq_random_hands[s].second.str());
-    // cout << eq_random_hands[s].second.str() << endl;
-    pair<double, double> eq = calculate_equity(cards, board, vhands, evaluator, 1);
+
+    fullSet ^= eq_random_hands[s].second;
+    std::vector<Card> cards = fullSet.cards();
+    fullSet |= eq_random_hands[s].second;
+
+    pair<double, double> eq = calculate_equity(cards, board, vhands, evaluator, 100);
     eq_vs_top += eq.first;
   }
   eq_vs_top /= nruns;
