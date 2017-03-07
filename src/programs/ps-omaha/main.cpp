@@ -70,11 +70,9 @@ pair<double, double> calculate_equity(std::vector<Card> cards,
     vector<EquityResult> results =
       showdown.calculateEquity(handDists, newBoard, evaluator);
 
-    double a = results[0].winShares;// + results[0].tieShares;
-    double b = results[1].winShares;// + results[1].tieShares;
+    total.first += results[0].winShares + results[0].tieShares;
+    total.second += results[1].winShares + results[1].tieShares;
     
-    total.first += a;
-    total.second += b;
    }
   // mean
   total.first /= samples;
@@ -181,6 +179,8 @@ int main(int argc, char** argv) {
 
   // equity vs top 10%
 
+  std::vector<std::pair<string, double> > top_eq;
+
   int nruns = samples * top / 100;
   double eq_vs_top = 0.0;
   for (int s = 0; s < nruns; s++){
@@ -193,9 +193,17 @@ int main(int argc, char** argv) {
     fullSet |= eq_random_hands[s].second;
 
     pair<double, double> eq = calculate_equity(cards, board, vhands, evaluator, 100);
+
+    std::pair<string, double> p(eq_random_hands[s].second.str(), eq.second);
+    top_eq.push_back(p);
     eq_vs_top += eq.first;
   }
   eq_vs_top /= nruns;
   cout << eq_vs_top << endl;
+
+  for (int s = 0; s < nruns; s++){
+      cout << top_eq[s].first << " " << top_eq[s].second << endl;
+  }
+
   return 0;
 }
