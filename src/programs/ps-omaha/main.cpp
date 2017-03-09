@@ -80,6 +80,44 @@ pair<double, double> calculate_equity(std::vector<Card> cards,
   return total;
 }
 
+// for how many rivers we are in the given equity percentile
+int river(CardSet handSet,
+	  CardSet boardSet,
+	  boost::shared_ptr<PokerHandEvaluator> evaluator,
+	  int samples){
+  CardSet fullSet = CardSet();
+  fullSet.fill();
+  fullSet ^= handSet;
+  std::vector<Card> cards = fullSet.cards();
+  int toBoard = evaluator->boardSize() - boardSet.size();
+
+  int count = 0;
+  vector<int> distribution;
+  distribution.resize(100);
+  
+  for (int s=0; s < samples; s++){
+    std::random_shuffle(cards.begin(), cards.end());
+
+    CardSet newBoard = CardSet(boardSet);
+
+    for (int i = 0; i < toBoard; i++)
+      {
+	newBoard.insert(cards[i]);
+      }
+    fullSet ^= newBoard;
+    std::vector<Card> riverCards = fullSet.cards();
+    fullSet |= newBoard;
+    vector<string> hands;
+    hands.push_back(handSet.str());
+    distribution[(int)(calculate_equity(riverCards, newBoard.str(), hands, evaluator, 100).first * 100)]++;
+  }
+
+  for (int i = 0; i < 100; i++)
+    cout << (double)(distribution[i]) / samples << " ";
+  cout << endl;
+  return 0;
+}
+
 int main(int argc, char** argv) {
   po::options_description desc("ps-eval, a poker hand evaluator\n");
 
@@ -88,6 +126,7 @@ int main(int argc, char** argv) {
       ("board,b", po::value<string>(), "community cards for he/o/o8")
       ("hand,h", po::value<vector<string>>(), "a hand for evaluation")
       ("top,top", po::value<int>()->default_value(100), "% of top hands")
+      ("river,r", po::bool_switch()->default_value(false), "% ")
       ("samples,s", po::value<int>()->default_value(10000), "num of monte carlo samples");
   // TODO: Only Omaha works!
   // TODO: Only one hand!
@@ -125,15 +164,20 @@ int main(int argc, char** argv) {
   CardSet boardSet = CardSet(board);
   CardSet handSet = CardSet(hands[0]);
 
+  boost::shared_ptr<PokerHandEvaluator> evaluator =
+    PokerHandEvaluator::alloc(game);
+
+  if (vm["river"].as<bool>()){
+    river(handSet, boardSet, evaluator, samples);
+    return 0;
+  }
+
   // subtract cards already dealt
   fullSet ^= boardSet;
-  fullSet ^= handSet;
 
   // list the cards
   std::vector<Card> cards = fullSet.cards();
 
-  boost::shared_ptr<PokerHandEvaluator> evaluator =
-    PokerHandEvaluator::alloc(game);
 
   // equity vs random hand
   // if (top == 100){
@@ -159,6 +203,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 4; i++){
        opponent.insert(cards[i]);
     }
+
     fullSet ^= opponent;
     std::vector<Card> cards = fullSet.cards();
 
@@ -179,11 +224,22 @@ int main(int argc, char** argv) {
 
   // equity vs top 10%
 
-  std::vector<std::pair<string, double> > top_eq;
+  fullSet ^= handSet;
+  cards = fullSet.cards();
 
-  int nruns = samples * top / 100;
-  double eq_vs_top = 0.0;
-  for (int s = 0; s < nruns; s++){
+  int nruns = samples; // * top / 100;
+  int npos = 0;
+
+  // NOTE: we may have less objects than 'samples' because of duplicates
+  for (int s = 0; s < eq_random_hands.size(); s++){
+    cout << eq_random_hands[s].second.str() << " " << eq_random_hands[s].first <<  " ";
+    CardSet intersection = eq_random_hands[s].second & handSet;
+    if (intersection.size()){
+      cout << -1 << endl;
+      std::pair<string, double> p(eq_random_hands[s].second.str(), -1);
+      continue;
+    }
+
     vector<string> vhands;
     vhands.push_back(hands[0]);
     vhands.push_back(eq_random_hands[s].second.str());
@@ -194,15 +250,7 @@ int main(int argc, char** argv) {
 
     pair<double, double> eq = calculate_equity(cards, board, vhands, evaluator, 100);
 
-    std::pair<string, double> p(eq_random_hands[s].second.str(), eq.second);
-    top_eq.push_back(p);
-    eq_vs_top += eq.first;
-  }
-  eq_vs_top /= nruns;
-  cout << eq_vs_top << endl;
-
-  for (int s = 0; s < nruns; s++){
-      cout << top_eq[s].first << " " << top_eq[s].second << endl;
+    cout << eq.second << endl;
   }
 
   return 0;
