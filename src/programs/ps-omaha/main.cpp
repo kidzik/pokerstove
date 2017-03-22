@@ -118,6 +118,36 @@ int river(CardSet handSet,
   return 0;
 }
 
+// for how many rivers we are in the given equity percentile
+int vspreflop(CardSet handSet,
+	  CardSet boardSet,
+	  boost::shared_ptr<PokerHandEvaluator> evaluator,
+	      int samples,
+	      vector<CardSet> opponents){
+  CardSet fullSet = CardSet();
+  fullSet.fill();
+  fullSet ^= handSet;
+  int toBoard = evaluator->boardSize() - boardSet.size();
+  double total;
+  
+  for (int s = 0; s < samples; s++)
+    {
+      // random from opponents
+      std::random_shuffle(opponents.begin(), opponents.end());
+      CardSet opponentSet = opponents[0];
+      fullSet ^= opponentSet;
+
+      vector<string> hands;
+      hands.push_back(handSet.str());
+      hands.push_back(opponentSet.str());
+      total += calculate_equity(fullSet.cards(), boardSet.str(), hands, evaluator, 10).first
+      fullSet |= opponentSet;
+    }
+
+  cout << total / samples << endl;
+  return 0;
+}
+
 int main(int argc, char** argv) {
   po::options_description desc("ps-eval, a poker hand evaluator\n");
 
@@ -127,6 +157,7 @@ int main(int argc, char** argv) {
       ("hand,h", po::value<vector<string>>(), "a hand for evaluation")
       ("top,top", po::value<int>()->default_value(100), "% of top hands")
       ("river,r", po::bool_switch()->default_value(false), "% ")
+      ("vspreflop,p", po::bool_switch()->default_value(false), "equity vs top % preflop")
       ("samples,s", po::value<int>()->default_value(10000), "num of monte carlo samples");
   // TODO: Only Omaha works!
   // TODO: Only one hand!
@@ -169,6 +200,13 @@ int main(int argc, char** argv) {
 
   if (vm["river"].as<bool>()){
     river(handSet, boardSet, evaluator, samples);
+    return 0;
+  }
+
+  if (vm["vspreflop"].as<bool>()){
+    vector<CardSet> topHands;
+    // load top hands
+    vspreflop(handSet, boardSet, evaluator, samples, topHands);
     return 0;
   }
 
