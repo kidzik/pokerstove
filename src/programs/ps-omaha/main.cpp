@@ -1,5 +1,7 @@
+#include <fstream>
 #include <iostream>
 #include <vector>
+#include <stdlib.h>
 #include <boost/program_options.hpp>
 #include <pokerstove/penum/ShowdownEnumerator.h>
 #include <pokerstove/peval/Card.h>
@@ -72,11 +74,12 @@ pair<double, double> calculate_equity(std::vector<Card> cards,
 
     total.first += results[0].winShares + results[0].tieShares;
     total.second += results[1].winShares + results[1].tieShares;
-    
+    // cout << newBoard.str() << results[0].winShares << " " << results[1].winShares <<  endl;
    }
   // mean
   total.first /= samples;
   total.second /= samples;
+  // cout << hands[0] << " " << hands[1] << ": " << total.first / samples << endl;
   return total;
 }
 
@@ -127,24 +130,27 @@ int vspreflop(CardSet handSet,
   CardSet fullSet = CardSet();
   fullSet.fill();
   fullSet ^= handSet;
-  int toBoard = evaluator->boardSize() - boardSet.size();
+  fullSet ^= boardSet;
   double total;
   
   for (int s = 0; s < samples; s++)
     {
       // random from opponents
-      std::random_shuffle(opponents.begin(), opponents.end());
-      CardSet opponentSet = opponents[0];
+      CardSet opponentSet = opponents[rand() % opponents.size()];
+      if (!fullSet.contains(opponentSet)){
+	--s;
+	continue;
+      }
       fullSet ^= opponentSet;
 
       vector<string> hands;
       hands.push_back(handSet.str());
       hands.push_back(opponentSet.str());
-      total += calculate_equity(fullSet.cards(), boardSet.str(), hands, evaluator, 10).first
+      total += calculate_equity(fullSet.cards(), boardSet.str(), hands, evaluator, 10).first;
       fullSet |= opponentSet;
     }
 
-  cout << total / samples << endl;
+  cout << (total / samples) << endl;
   return 0;
 }
 
@@ -155,7 +161,7 @@ int main(int argc, char** argv) {
       ("game,g", po::value<string>()->default_value("O"), "game to use for evaluation")
       ("board,b", po::value<string>(), "community cards for he/o/o8")
       ("hand,h", po::value<vector<string>>(), "a hand for evaluation")
-      ("top,top", po::value<int>()->default_value(100), "% of top hands")
+      ("top,t", po::value<int>()->default_value(100), "% of top hands")
       ("river,r", po::bool_switch()->default_value(false), "% ")
       ("vspreflop,p", po::bool_switch()->default_value(false), "equity vs top % preflop")
       ("samples,s", po::value<int>()->default_value(10000), "num of monte carlo samples");
@@ -204,7 +210,24 @@ int main(int argc, char** argv) {
   }
 
   if (vm["vspreflop"].as<bool>()){
-    vector<CardSet> topHands;
+    int nall = 270725;
+    int ntop = nall * top / 100;
+    vector<CardSet> topHands(ntop);
+    ofstream myfile;
+    string sortedHands;
+    std::ifstream file("Sortedhands.txt");
+    std::getline(file, sortedHands);
+
+    string word;
+    istringstream iss(sortedHands, istringstream::in);
+
+    int i=0;
+    while( iss >> word )     
+      {
+	topHands[i++] = CardSet(word);
+	if (i >= ntop)
+	  break;
+      }
     // load top hands
     vspreflop(handSet, boardSet, evaluator, samples, topHands);
     return 0;
