@@ -119,7 +119,7 @@ int river(CardSet handSet,
   }
 
   double total = 0;
-  for (int i = 0; i < 100; i++){
+  for (int i = 0; i <= 100; i++){
     cout << (double)(distribution[i]) / samples << " ";
     total += distribution[i];
   }
