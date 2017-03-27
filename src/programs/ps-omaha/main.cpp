@@ -91,12 +91,14 @@ int river(CardSet handSet,
   CardSet fullSet = CardSet();
   fullSet.fill();
   fullSet ^= handSet;
+  fullSet ^= boardSet;
   std::vector<Card> cards = fullSet.cards();
+  fullSet |= boardSet;
   int toBoard = evaluator->boardSize() - boardSet.size();
 
   int count = 0;
   vector<int> distribution;
-  distribution.resize(100);
+  distribution.resize(101);
   
   for (int s=0; s < samples; s++){
     std::random_shuffle(cards.begin(), cards.end());
@@ -112,11 +114,15 @@ int river(CardSet handSet,
     fullSet |= newBoard;
     vector<string> hands;
     hands.push_back(handSet.str());
-    distribution[(int)(calculate_equity(riverCards, newBoard.str(), hands, evaluator, 100).first * 100)]++;
+    int bin = (int)(calculate_equity(riverCards, newBoard.str(), hands, evaluator, 100).first * 100);
+    distribution[bin]++;
   }
 
-  for (int i = 0; i < 100; i++)
+  double total = 0;
+  for (int i = 0; i < 100; i++){
     cout << (double)(distribution[i]) / samples << " ";
+    total += distribution[i];
+  }
   cout << endl;
   return 0;
 }
@@ -149,7 +155,6 @@ int vspreflop(CardSet handSet,
       total += calculate_equity(fullSet.cards(), boardSet.str(), hands, evaluator, 10).first;
       fullSet |= opponentSet;
     }
-
   cout << (total / samples) << endl;
   return 0;
 }
