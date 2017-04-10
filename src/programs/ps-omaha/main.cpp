@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
     std::random_shuffle(cards.begin(), cards.end());
     CardSet opponent = CardSet();
 
-    for (int i = 0; i < 4; i++){
+    for (int i = 0; i < evaluator->handSize(); i++){
        opponent.insert(cards[i]);
     }
 
