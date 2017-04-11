@@ -216,6 +216,8 @@ int main(int argc, char** argv) {
 
   if (vm["vspreflop"].as<bool>()){
     int nall = 270725;
+    if (game == "h")
+      nall = 1326;
     int ntop = nall * top / 100;
     vector<CardSet> topHands(ntop);
     ofstream myfile;
