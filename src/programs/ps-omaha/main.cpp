@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
     vector<CardSet> topHands(ntop);
     ofstream myfile;
     string sortedHands;
-    std::ifstream file("Sortedhands.txt");
+    std::ifstream file("hands-" + game + ".txt");
     std::getline(file, sortedHands);
 
     string word;
